@@ -13,7 +13,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.projecttracker.R
 import com.example.projecttracker.data.local.AppDatabase
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
+import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.databinding.FragmentProjectListBinding
 import com.example.projecttracker.ui.adapter.ProjectListAdapter
 import com.example.projecttracker.viewmodel.ProjectViewModel
@@ -26,8 +28,12 @@ class ProjectListFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val projectViewModel: ProjectViewModel by viewModels {
-        val projectDao = AppDatabase.getInstance(requireContext()).projectDao()
-        ProjectViewModelFactory(ProjectRepository(projectDao))
+        val db = AppDatabase.getInstance(requireContext())
+        ProjectViewModelFactory(
+            ProjectRepository(db.projectDao()),
+            TaskRepository(db.taskDao()),
+            ProjectDependencyRepository(db.projectDependencyDao())
+        )
     }
 
     private val projectListAdapter = ProjectListAdapter(

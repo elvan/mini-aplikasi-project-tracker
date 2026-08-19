@@ -10,7 +10,7 @@ import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.domain.DetectCircularDependencyUseCase
-import com.example.projecttracker.domain.ProjectRecalculator
+import com.example.projecttracker.domain.RecalculateProjectUseCase
 import com.example.projecttracker.domain.ValidateTaskDependencyUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +40,9 @@ class TaskViewModel(
     private val projectDependencyRepository: ProjectDependencyRepository,
     private val projectId: Long
 ) : ViewModel() {
+
+    private val recalculateProjectUseCase =
+        RecalculateProjectUseCase(projectRepository, taskRepository, projectDependencyRepository)
 
     val tasks: StateFlow<List<TaskListItem>> = taskRepository.getAllByProject(projectId)
         .map { tasks -> flattenHierarchy(tasks) }
@@ -132,14 +135,7 @@ class TaskViewModel(
     }
 
     private suspend fun recalculateProject() {
-        val project = projectRepository.getById(projectId) ?: return
-        val projectTasks = taskRepository.getTasksForProgressCalculation(projectId)
-        val dependencyStatuses = projectDependencyRepository.getDependenciesOf(projectId)
-            .mapNotNull { projectRepository.getById(it.dependsOnProjectId)?.status }
-        val result = ProjectRecalculator.recalculate(projectTasks, dependencyStatuses)
-        if (project.completionProgress != result.progress || project.status != result.status) {
-            projectRepository.update(project.copy(completionProgress = result.progress, status = result.status))
-        }
+        recalculateProjectUseCase(projectId)
     }
 
     private fun flattenHierarchy(tasks: List<Task>): List<TaskListItem> {

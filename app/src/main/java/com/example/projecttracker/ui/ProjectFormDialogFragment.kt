@@ -10,12 +10,17 @@ import com.example.projecttracker.R
 import com.example.projecttracker.data.local.AppDatabase
 import com.example.projecttracker.data.local.entity.Project
 import com.example.projecttracker.data.local.entity.ProjectStatus
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
+import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.databinding.DialogProjectFormBinding
+import com.example.projecttracker.viewmodel.ProjectSaveError
+import com.example.projecttracker.viewmodel.ProjectSaveResult
 import com.example.projecttracker.viewmodel.ProjectViewModel
 import com.example.projecttracker.viewmodel.ProjectViewModelFactory
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -28,8 +33,12 @@ class ProjectFormDialogFragment : BottomSheetDialogFragment() {
     private val binding get() = _binding!!
 
     private val projectViewModel: ProjectViewModel by viewModels {
-        val projectDao = AppDatabase.getInstance(requireContext()).projectDao()
-        ProjectViewModelFactory(ProjectRepository(projectDao))
+        val db = AppDatabase.getInstance(requireContext())
+        ProjectViewModelFactory(
+            ProjectRepository(db.projectDao()),
+            TaskRepository(db.taskDao()),
+            ProjectDependencyRepository(db.projectDependencyDao())
+        )
     }
 
     private val projectId: Long by lazy { arguments?.getLong(ARG_PROJECT_ID, NO_ID) ?: NO_ID }
@@ -38,6 +47,9 @@ class ProjectFormDialogFragment : BottomSheetDialogFragment() {
     private var editingProject: Project? = null
     private var startDate: LocalDate? = null
     private var endDate: LocalDate? = null
+
+    private var dependencyOptions: List<Project> = emptyList()
+    private var selectedDependencyIds: MutableSet<Long> = mutableSetOf()
 
     private val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
 
@@ -60,32 +72,40 @@ class ProjectFormDialogFragment : BottomSheetDialogFragment() {
 
         binding.editStartDate.setOnClickListener { showDatePicker(isStart = true) }
         binding.editEndDate.setOnClickListener { showDatePicker(isStart = false) }
+        binding.editDependency.setOnClickListener { showDependencyPicker() }
 
         binding.buttonCancel.setOnClickListener { dismiss() }
         binding.buttonSave.setOnClickListener { onSaveClicked() }
 
-        if (isEditMode) {
-            loadProject()
-        }
+        loadFormData()
     }
 
-    private fun loadProject() {
+    private fun loadFormData() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val project = projectViewModel.getProjectById(projectId)
-            if (project == null) {
+            val allProjects = projectViewModel.getAllProjectsOnce()
+            val existing = if (isEditMode) projectViewModel.getProjectById(projectId) else null
+            if (isEditMode && existing == null) {
                 dismiss()
                 return@launch
             }
-            editingProject = project
-            startDate = project.startDate
-            endDate = project.endDate
 
-            binding.editProjectName.setText(project.nama)
-            binding.editStartDate.setText(project.startDate.format(dateFormatter))
-            binding.editEndDate.setText(project.endDate.format(dateFormatter))
-            binding.textStatusValue.text = statusLabel(project.status)
-            binding.textProgressValue.text =
-                getString(R.string.project_progress_format, project.completionProgress)
+            dependencyOptions = allProjects.filter { it.id != existing?.id }
+
+            if (existing != null) {
+                editingProject = existing
+                startDate = existing.startDate
+                endDate = existing.endDate
+
+                binding.editProjectName.setText(existing.nama)
+                binding.editStartDate.setText(existing.startDate.format(dateFormatter))
+                binding.editEndDate.setText(existing.endDate.format(dateFormatter))
+                binding.textStatusValue.text = statusLabel(existing.status)
+                binding.textProgressValue.text =
+                    getString(R.string.project_progress_format, existing.completionProgress)
+
+                selectedDependencyIds = projectViewModel.getDependencyIdsOf(existing.id).toMutableSet()
+            }
+            updateDependencySummary()
         }
     }
 
@@ -111,6 +131,36 @@ class ProjectFormDialogFragment : BottomSheetDialogFragment() {
             }
         }
         picker.show(childFragmentManager, if (isStart) TAG_START_DATE_PICKER else TAG_END_DATE_PICKER)
+    }
+
+    private fun showDependencyPicker() {
+        if (dependencyOptions.isEmpty()) return
+        val labels = dependencyOptions.map { it.nama }.toTypedArray()
+        val checked = dependencyOptions.map { it.id in selectedDependencyIds }.toBooleanArray()
+        val tempSelected = selectedDependencyIds.toMutableSet()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.label_project_dependency)
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                val id = dependencyOptions[which].id
+                if (isChecked) tempSelected += id else tempSelected -= id
+            }
+            .setPositiveButton(R.string.action_save) { _, _ ->
+                selectedDependencyIds = tempSelected
+                updateDependencySummary()
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    private fun updateDependencySummary() {
+        binding.editDependency.setText(
+            if (selectedDependencyIds.isEmpty()) {
+                getString(R.string.dependency_none_selected)
+            } else {
+                dependencyOptions.filter { it.id in selectedDependencyIds }.joinToString(", ") { it.nama }
+            }
+        )
     }
 
     private fun onSaveClicked() {
@@ -148,13 +198,33 @@ class ProjectFormDialogFragment : BottomSheetDialogFragment() {
 
         if (hasError || start == null || end == null) return
 
-        val existing = editingProject
-        if (existing != null) {
-            projectViewModel.updateProject(existing.copy(nama = name, startDate = start, endDate = end))
-        } else {
-            projectViewModel.addProject(name, start, end)
+        binding.buttonSave.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = projectViewModel.saveProject(
+                projectId = editingProject?.id,
+                nama = name,
+                startDate = start,
+                endDate = end,
+                dependencyIds = selectedDependencyIds
+            )
+            when (result) {
+                is ProjectSaveResult.Success -> dismiss()
+                is ProjectSaveResult.Error -> {
+                    binding.buttonSave.isEnabled = true
+                    showSaveError(result.error)
+                }
+            }
         }
-        dismiss()
+    }
+
+    private fun showSaveError(error: ProjectSaveError) {
+        val message = when (error) {
+            ProjectSaveError.CircularDependency -> getString(R.string.error_project_circular_dependency)
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun statusLabel(status: ProjectStatus): String {

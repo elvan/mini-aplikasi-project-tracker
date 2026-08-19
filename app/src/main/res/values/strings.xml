@@ -44,10 +44,12 @@
     <string name="label_end_date">Tanggal Selesai</string>
     <string name="label_project_status_readonly">Status</string>
     <string name="label_project_progress_readonly">Progress</string>
+    <string name="label_project_dependency">Dependency Project</string>
 
     <string name="error_project_name_required">Nama project tidak boleh kosong</string>
     <string name="error_date_required">Tanggal wajib diisi</string>
     <string name="error_end_date_before_start_date">Tanggal selesai tidak boleh sebelum tanggal mulai</string>
+    <string name="error_project_circular_dependency">Dependency ini akan menghasilkan siklus (circular dependency) antar project</string>
 
     <string name="title_task_form_add">Tambah Task</string>
     <string name="title_task_form_edit">Edit Task</string>

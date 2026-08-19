@@ -6,7 +6,9 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import com.example.projecttracker.R
 import com.example.projecttracker.data.local.AppDatabase
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
+import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.viewmodel.ProjectViewModel
 import com.example.projecttracker.viewmodel.ProjectViewModelFactory
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -14,8 +16,12 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 class ProjectDeleteConfirmDialogFragment : DialogFragment() {
 
     private val projectViewModel: ProjectViewModel by viewModels {
-        val projectDao = AppDatabase.getInstance(requireContext()).projectDao()
-        ProjectViewModelFactory(ProjectRepository(projectDao))
+        val db = AppDatabase.getInstance(requireContext())
+        ProjectViewModelFactory(
+            ProjectRepository(db.projectDao()),
+            TaskRepository(db.taskDao()),
+            ProjectDependencyRepository(db.projectDependencyDao())
+        )
     }
 
     private val projectId: Long by lazy { requireArguments().getLong(ARG_PROJECT_ID) }
