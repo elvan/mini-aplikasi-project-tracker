@@ -220,6 +220,20 @@ class ProjectFormDialogFragment : BottomSheetDialogFragment() {
     private fun showSaveError(error: ProjectSaveError) {
         val message = when (error) {
             ProjectSaveError.CircularDependency -> getString(R.string.error_project_circular_dependency)
+            is ProjectSaveError.ScheduleConflict -> {
+                val items = error.conflictingProjects.joinToString("\n") { conflict ->
+                    getString(
+                        R.string.project_schedule_conflict_item_format,
+                        conflict.nama,
+                        getString(
+                            R.string.project_date_range_format,
+                            conflict.startDate.format(dateFormatter),
+                            conflict.endDate.format(dateFormatter)
+                        )
+                    )
+                }
+                getString(R.string.error_project_schedule_conflict, items)
+            }
         }
         MaterialAlertDialogBuilder(requireContext())
             .setMessage(message)

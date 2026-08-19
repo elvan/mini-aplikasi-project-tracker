@@ -56,6 +56,8 @@
     <string name="error_date_required">Tanggal wajib diisi</string>
     <string name="error_end_date_before_start_date">Tanggal selesai tidak boleh sebelum tanggal mulai</string>
     <string name="error_project_circular_dependency">Dependency ini akan menghasilkan siklus (circular dependency) antar project</string>
+    <string name="error_project_schedule_conflict">Jadwal project ini beririsan dengan project berikut:\n%1$s</string>
+    <string name="project_schedule_conflict_item_format">• %1$s (%2$s)</string>
 
     <string name="title_task_form_add">Tambah Task</string>
     <string name="title_task_form_edit">Edit Task</string>

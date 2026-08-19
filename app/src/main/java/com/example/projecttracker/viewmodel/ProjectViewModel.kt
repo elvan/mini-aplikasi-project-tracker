@@ -8,6 +8,7 @@ import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.domain.DetectCircularProjectDependencyUseCase
+import com.example.projecttracker.domain.FindScheduleConflictsUseCase
 import com.example.projecttracker.domain.RecalculateProjectUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +18,7 @@ import java.time.LocalDate
 
 sealed class ProjectSaveError {
     object CircularDependency : ProjectSaveError()
+    data class ScheduleConflict(val conflictingProjects: List<Project>) : ProjectSaveError()
 }
 
 sealed class ProjectSaveResult {
@@ -55,6 +57,17 @@ class ProjectViewModel(
         dependencyIds: Set<Long>
     ): ProjectSaveResult {
         val allProjects = projectRepository.getAllOnce()
+
+        val candidate = Project(
+            id = projectId ?: NEW_PROJECT_NODE_ID,
+            nama = nama,
+            startDate = startDate,
+            endDate = endDate
+        )
+        val scheduleConflicts = FindScheduleConflictsUseCase.findScheduleConflicts(candidate, allProjects)
+        if (scheduleConflicts.isNotEmpty()) {
+            return ProjectSaveResult.Error(ProjectSaveError.ScheduleConflict(scheduleConflicts))
+        }
 
         val existingDependencyEdges = allProjects
             .filter { it.id != projectId }
