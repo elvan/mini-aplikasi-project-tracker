@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.projecttracker.R
@@ -198,7 +199,12 @@ class TaskFormDialogFragment : BottomSheetDialogFragment() {
                 dependencyIds = selectedDependencyIds
             )
             when (result) {
-                TaskSaveResult.Success -> dismiss()
+                is TaskSaveResult.Success -> {
+                    if (result.invalidatedDependentNames.isNotEmpty()) {
+                        showInvalidatedDependentsWarning(result.invalidatedDependentNames)
+                    }
+                    dismiss()
+                }
                 is TaskSaveResult.Error -> {
                     binding.buttonSave.isEnabled = true
                     showSaveError(result.error)
@@ -218,6 +224,14 @@ class TaskFormDialogFragment : BottomSheetDialogFragment() {
             .setMessage(message)
             .setPositiveButton(android.R.string.ok, null)
             .show()
+    }
+
+    private fun showInvalidatedDependentsWarning(dependentNames: List<String>) {
+        Toast.makeText(
+            requireContext(),
+            getString(R.string.warning_task_dependents_invalidated, dependentNames.joinToString(", ")),
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     private fun statusLabel(status: TaskStatus): String {

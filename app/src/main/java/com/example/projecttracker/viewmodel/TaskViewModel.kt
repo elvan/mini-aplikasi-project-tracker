@@ -9,8 +9,9 @@ import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
+import com.example.projecttracker.domain.DetectCircularDependencyUseCase
 import com.example.projecttracker.domain.ProjectRecalculator
-import com.example.projecttracker.domain.TaskDependencyValidator
+import com.example.projecttracker.domain.ValidateTaskDependencyUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -25,7 +26,10 @@ sealed class TaskSaveError {
 }
 
 sealed class TaskSaveResult {
-    object Success : TaskSaveResult()
+    // invalidatedDependentNames: names of tasks that were already Done but now depend on a
+    // task that is no longer Done. Their stored status is left untouched (see design note on
+    // ValidateTaskDependencyUseCase); this list is only for surfacing a warning to the user.
+    data class Success(val invalidatedDependentNames: List<String> = emptyList()) : TaskSaveResult()
     data class Error(val error: TaskSaveError) : TaskSaveResult()
 }
 
@@ -64,23 +68,26 @@ class TaskViewModel(
         val allTasks = taskRepository.getTasksForProgressCalculation(projectId)
         val tasksById = allTasks.associateBy { it.id }
 
-        if (status == TaskStatus.DONE) {
-            val blockingDependency = dependencyIds
-                .mapNotNull { tasksById[it] }
-                .firstOrNull { it.status != TaskStatus.DONE }
-            if (blockingDependency != null) {
-                return TaskSaveResult.Error(TaskSaveError.DependencyNotDone(blockingDependency.nama))
-            }
+        val blockingDependency = ValidateTaskDependencyUseCase.findBlockingDependency(
+            newStatus = status,
+            dependencyIds = dependencyIds,
+            tasksById = tasksById
+        )
+        if (blockingDependency != null) {
+            return TaskSaveResult.Error(TaskSaveError.DependencyNotDone(blockingDependency.nama))
         }
 
-        val graph = mutableMapOf<Long, List<Long>>()
-        for (task in allTasks) {
-            if (task.id == taskId) continue
-            graph[task.id] = taskDependencyRepository.getDependenciesOf(task.id).map { it.dependsOnTaskId }
-        }
-        graph[taskId ?: NEW_TASK_NODE_ID] = dependencyIds.toList()
+        val existingDependencyEdges = allTasks
+            .filter { it.id != taskId }
+            .associate { it.id to taskDependencyRepository.getDependenciesOf(it.id).map { dep -> dep.dependsOnTaskId } }
 
-        if (TaskDependencyValidator.hasCycle(graph)) {
+        val wouldCycle = DetectCircularDependencyUseCase.wouldCreateCycle(
+            allTaskIds = allTasks.map { it.id },
+            existingDependencyEdges = existingDependencyEdges,
+            editedTaskId = taskId ?: NEW_TASK_NODE_ID,
+            newDependencyIds = dependencyIds
+        )
+        if (wouldCycle) {
             return TaskSaveResult.Error(TaskSaveError.CircularDependency)
         }
 
@@ -105,7 +112,14 @@ class TaskViewModel(
 
         recalculateProject()
 
-        return TaskSaveResult.Success
+        val dependentTaskIds = taskDependencyRepository.getDependents(savedTaskId).map { it.taskId }
+        val invalidatedDependents = ValidateTaskDependencyUseCase.findInvalidatedDoneDependents(
+            newStatus = status,
+            dependentTaskIds = dependentTaskIds,
+            tasksById = tasksById
+        )
+
+        return TaskSaveResult.Success(invalidatedDependents.map { it.nama })
     }
 
     fun deleteTask(taskId: Long) {

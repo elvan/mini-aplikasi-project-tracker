@@ -63,4 +63,5 @@
     <string name="error_task_bobot_invalid">Bobot harus bilangan bulat positif</string>
     <string name="error_task_dependency_not_done">Task tidak bisa ditandai selesai karena dependency \"%1$s\" belum selesai</string>
     <string name="error_task_circular_dependency">Dependency ini akan menghasilkan siklus (circular dependency) antar task</string>
+    <string name="warning_task_dependents_invalidated">Task berikut sebelumnya Done tapi dependency-nya kini belum selesai: %1$s. Statusnya tidak diubah otomatis, tapi tidak akan lolos validasi jika disimpan ulang sebagai Done.</string>
 </resources>
