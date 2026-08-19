@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/projectListFragment">
+
+    <fragment
+        android:id="@+id/projectListFragment"
+        android:name="com.example.projecttracker.ui.ProjectListFragment"
+        android:label="@string/title_project_list"
+        tools:layout="@layout/fragment_project_list">
+
+        <action
+            android:id="@+id/action_projectListFragment_to_taskListFragment"
+            app:destination="@id/taskListFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/taskListFragment"
+        android:name="com.example.projecttracker.ui.TaskListFragment"
+        android:label="@string/title_task_list"
+        tools:layout="@layout/fragment_task_list">
+
+        <argument
+            android:name="projectId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+
+</navigation>
