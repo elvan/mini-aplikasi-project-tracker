@@ -7,10 +7,11 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.projecttracker.data.local.converter.Converters
 import com.example.projecttracker.data.local.entity.Project
+import com.example.projecttracker.data.local.entity.Task
 
 @Database(
-    entities = [Project::class],
-    version = 1,
+    entities = [Project::class, Task::class],
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -28,7 +29,8 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     DATABASE_NAME
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration(dropAllTables = true)
+                    .build().also { INSTANCE = it }
             }
     }
 }

@@ -2,6 +2,7 @@ package com.example.projecttracker.data.local.converter
 
 import androidx.room.TypeConverter
 import com.example.projecttracker.data.local.entity.ProjectStatus
+import com.example.projecttracker.data.local.entity.TaskStatus
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -21,4 +22,10 @@ class Converters {
 
     @TypeConverter
     fun toProjectStatus(value: String): ProjectStatus = ProjectStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromTaskStatus(status: TaskStatus): String = status.name
+
+    @TypeConverter
+    fun toTaskStatus(value: String): TaskStatus = TaskStatus.valueOf(value)
 }
