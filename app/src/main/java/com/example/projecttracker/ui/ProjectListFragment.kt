@@ -73,6 +73,10 @@ class ProjectListFragment : Fragment() {
                 .show(childFragmentManager, ProjectFormDialogFragment.TAG)
         }
 
+        binding.swipeRefreshProjectList.setOnRefreshListener {
+            projectViewModel.refreshProjects()
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -92,6 +96,11 @@ class ProjectListFragment : Fragment() {
                         } else {
                             View.GONE
                         }
+                    }
+                }
+                launch {
+                    projectViewModel.isRefreshing.collect { isRefreshing ->
+                        binding.swipeRefreshProjectList.isRefreshing = isRefreshing
                     }
                 }
             }

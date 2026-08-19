@@ -47,6 +47,22 @@ class ProjectViewModel(
     private val _isDeleting = MutableStateFlow(false)
     val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    // `projects` is already a live Flow off Room, so it never goes stale — this just gives the
+    // pull-to-refresh gesture a real DB round-trip to show a completion for.
+    fun refreshProjects() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                projectRepository.getAllOnce()
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+
     suspend fun getProjectById(id: Long): Project? = projectRepository.getById(id)
 
     suspend fun getAllProjectsOnce(): List<Project> = projectRepository.getAllOnce()
