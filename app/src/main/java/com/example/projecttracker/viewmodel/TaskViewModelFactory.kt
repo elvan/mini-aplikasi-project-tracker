@@ -2,6 +2,7 @@ package com.example.projecttracker.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
@@ -10,6 +11,7 @@ class TaskViewModelFactory(
     private val taskRepository: TaskRepository,
     private val taskDependencyRepository: TaskDependencyRepository,
     private val projectRepository: ProjectRepository,
+    private val projectDependencyRepository: ProjectDependencyRepository,
     private val projectId: Long
 ) : ViewModelProvider.Factory {
 
@@ -18,6 +20,12 @@ class TaskViewModelFactory(
         require(modelClass.isAssignableFrom(TaskViewModel::class.java)) {
             "Unknown ViewModel class: ${modelClass.name}"
         }
-        return TaskViewModel(taskRepository, taskDependencyRepository, projectRepository, projectId) as T
+        return TaskViewModel(
+            taskRepository,
+            taskDependencyRepository,
+            projectRepository,
+            projectDependencyRepository,
+            projectId
+        ) as T
     }
 }

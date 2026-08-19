@@ -6,6 +6,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import com.example.projecttracker.R
 import com.example.projecttracker.data.local.AppDatabase
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
@@ -25,6 +26,7 @@ class TaskDeleteConfirmDialogFragment : DialogFragment() {
             TaskRepository(db.taskDao()),
             TaskDependencyRepository(db.taskDependencyDao()),
             ProjectRepository(db.projectDao()),
+            ProjectDependencyRepository(db.projectDependencyDao()),
             projectId
         )
     }

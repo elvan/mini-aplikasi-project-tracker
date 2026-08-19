@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.projecttracker.data.local.AppDatabase
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
@@ -34,6 +35,7 @@ class TaskListFragment : Fragment() {
             TaskRepository(db.taskDao()),
             TaskDependencyRepository(db.taskDependencyDao()),
             ProjectRepository(db.projectDao()),
+            ProjectDependencyRepository(db.projectDependencyDao()),
             projectId
         )
     }

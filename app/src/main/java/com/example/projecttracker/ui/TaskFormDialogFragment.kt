@@ -11,6 +11,7 @@ import com.example.projecttracker.R
 import com.example.projecttracker.data.local.AppDatabase
 import com.example.projecttracker.data.local.entity.Task
 import com.example.projecttracker.data.local.entity.TaskStatus
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
@@ -41,6 +42,7 @@ class TaskFormDialogFragment : BottomSheetDialogFragment() {
             TaskRepository(db.taskDao()),
             TaskDependencyRepository(db.taskDependencyDao()),
             ProjectRepository(db.projectDao()),
+            ProjectDependencyRepository(db.projectDependencyDao()),
             projectId
         )
     }

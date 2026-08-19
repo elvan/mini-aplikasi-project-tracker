@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.projecttracker.data.local.entity.Task
 import com.example.projecttracker.data.local.entity.TaskDependency
 import com.example.projecttracker.data.local.entity.TaskStatus
+import com.example.projecttracker.data.repository.ProjectDependencyRepository
 import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
@@ -32,6 +33,7 @@ class TaskViewModel(
     private val taskRepository: TaskRepository,
     private val taskDependencyRepository: TaskDependencyRepository,
     private val projectRepository: ProjectRepository,
+    private val projectDependencyRepository: ProjectDependencyRepository,
     private val projectId: Long
 ) : ViewModel() {
 
@@ -118,10 +120,11 @@ class TaskViewModel(
     private suspend fun recalculateProject() {
         val project = projectRepository.getById(projectId) ?: return
         val projectTasks = taskRepository.getTasksForProgressCalculation(projectId)
-        val progress = ProjectRecalculator.calculateProjectProgress(projectTasks)
-        val status = ProjectRecalculator.calculateProjectStatus(projectTasks)
-        if (project.completionProgress != progress || project.status != status) {
-            projectRepository.update(project.copy(completionProgress = progress, status = status))
+        val dependencyStatuses = projectDependencyRepository.getDependenciesOf(projectId)
+            .mapNotNull { projectRepository.getById(it.dependsOnProjectId)?.status }
+        val result = ProjectRecalculator.recalculate(projectTasks, dependencyStatuses)
+        if (project.completionProgress != result.progress || project.status != result.status) {
+            projectRepository.update(project.copy(completionProgress = result.progress, status = result.status))
         }
     }
 
