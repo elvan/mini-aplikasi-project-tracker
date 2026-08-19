@@ -8,6 +8,7 @@ import androidx.room.TypeConverters
 import com.example.projecttracker.data.local.converter.Converters
 import com.example.projecttracker.data.local.dao.ProjectDao
 import com.example.projecttracker.data.local.dao.ProjectDependencyDao
+import com.example.projecttracker.data.local.dao.TaskDao
 import com.example.projecttracker.data.local.dao.TaskDependencyDao
 import com.example.projecttracker.data.local.entity.Project
 import com.example.projecttracker.data.local.entity.ProjectDependency
@@ -23,6 +24,8 @@ import com.example.projecttracker.data.local.entity.TaskDependency
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun projectDao(): ProjectDao
+
+    abstract fun taskDao(): TaskDao
 
     abstract fun taskDependencyDao(): TaskDependencyDao
 
