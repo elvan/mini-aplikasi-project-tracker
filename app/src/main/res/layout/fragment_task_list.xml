@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,6 +13,41 @@
         android:layout_margin="16dp"
         android:text="@string/title_task_list"
         android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_search_task"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:hint="@string/label_task_search">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_search_task"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_filter_status"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:hint="@string/label_task_filter_status">
+
+        <AutoCompleteTextView
+            android:id="@+id/edit_filter_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"
+            tools:text="Semua" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -38,12 +74,14 @@
             tools:visibility="visible">
 
             <TextView
+                android:id="@+id/text_empty_state_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/task_list_empty_title"
                 android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <TextView
+                android:id="@+id/text_empty_state_description"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"

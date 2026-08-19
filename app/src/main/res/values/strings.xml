@@ -14,6 +14,12 @@
 
     <string name="task_list_empty_title">Belum ada task</string>
     <string name="task_list_empty_description">Tap tombol tambah untuk membuat task pertama pada project ini.</string>
+    <string name="task_list_no_results_title">Tidak ada task yang cocok</string>
+    <string name="task_list_no_results_description">Coba ubah kata kunci pencarian atau filter status.</string>
+
+    <string name="label_task_search">Cari task atau subtask</string>
+    <string name="label_task_filter_status">Filter status</string>
+    <string name="task_filter_status_all">Semua</string>
 
     <string name="project_progress_format">%.1f%%</string>
     <string name="project_date_range_format">%1$s – %2$s</string>

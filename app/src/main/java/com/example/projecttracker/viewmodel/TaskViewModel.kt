@@ -10,15 +10,27 @@ import com.example.projecttracker.data.repository.ProjectRepository
 import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.domain.DetectCircularDependencyUseCase
+import com.example.projecttracker.domain.FilterTaskHierarchyUseCase
 import com.example.projecttracker.domain.RecalculateProjectUseCase
 import com.example.projecttracker.domain.ValidateTaskDependencyUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class TaskListItem(val task: Task, val level: Int)
+
+data class TaskFilterState(val status: TaskStatus? = null, val query: String = "") {
+    val isActive: Boolean get() = status != null || query.isNotBlank()
+}
+
+data class TaskListUiState(
+    val items: List<TaskListItem> = emptyList(),
+    val isFilterActive: Boolean = false
+)
 
 sealed class TaskSaveError {
     data class DependencyNotDone(val dependencyName: String) : TaskSaveError()
@@ -44,13 +56,27 @@ class TaskViewModel(
     private val recalculateProjectUseCase =
         RecalculateProjectUseCase(projectRepository, taskRepository, projectDependencyRepository)
 
-    val tasks: StateFlow<List<TaskListItem>> = taskRepository.getAllByProject(projectId)
-        .map { tasks -> flattenHierarchy(tasks) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+    private val filterState = MutableStateFlow(TaskFilterState())
+
+    val uiState: StateFlow<TaskListUiState> = combine(
+        taskRepository.getAllByProject(projectId),
+        filterState
+    ) { tasks, filter ->
+        val filtered = FilterTaskHierarchyUseCase.filter(tasks, filter.status, filter.query)
+        TaskListUiState(items = flattenHierarchy(filtered), isFilterActive = filter.isActive)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = TaskListUiState()
+    )
+
+    fun setStatusFilter(status: TaskStatus?) {
+        filterState.update { it.copy(status = status) }
+    }
+
+    fun setSearchQuery(query: String) {
+        filterState.update { it.copy(query = query) }
+    }
 
     suspend fun getTaskById(taskId: Long): Task? = taskRepository.getById(taskId)
 
