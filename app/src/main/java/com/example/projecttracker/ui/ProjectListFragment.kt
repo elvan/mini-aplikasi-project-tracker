@@ -38,6 +38,10 @@ class ProjectListFragment : Fragment() {
         onEditClick = { project ->
             ProjectFormDialogFragment.newInstanceForEdit(project.id)
                 .show(childFragmentManager, ProjectFormDialogFragment.TAG)
+        },
+        onDeleteClick = { project ->
+            ProjectDeleteConfirmDialogFragment.newInstance(project.id, project.nama)
+                .show(childFragmentManager, ProjectDeleteConfirmDialogFragment.TAG)
         }
     )
 

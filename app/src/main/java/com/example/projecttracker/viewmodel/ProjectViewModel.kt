@@ -41,4 +41,11 @@ class ProjectViewModel(private val projectRepository: ProjectRepository) : ViewM
             projectRepository.update(project)
         }
     }
+
+    fun deleteProject(projectId: Long) {
+        viewModelScope.launch {
+            val project = projectRepository.getById(projectId) ?: return@launch
+            projectRepository.delete(project)
+        }
+    }
 }

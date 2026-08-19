@@ -16,8 +16,13 @@
 
     <string name="action_add_project">Tambah project</string>
     <string name="action_edit_project">Edit project</string>
+    <string name="action_delete_project">Hapus project</string>
     <string name="action_save">Simpan</string>
     <string name="action_cancel">Batal</string>
+    <string name="action_delete">Hapus</string>
+
+    <string name="title_delete_project_confirm">Hapus Project?</string>
+    <string name="message_delete_project_confirm">Project \"%1$s\" beserta seluruh task, subtask, dan relasi dependency-nya akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.</string>
 
     <string name="title_project_form_add">Tambah Project</string>
     <string name="title_project_form_edit">Edit Project</string>
