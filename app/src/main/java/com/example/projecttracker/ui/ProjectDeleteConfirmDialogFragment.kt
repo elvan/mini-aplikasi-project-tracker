@@ -15,7 +15,14 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class ProjectDeleteConfirmDialogFragment : DialogFragment() {
 
-    private val projectViewModel: ProjectViewModel by viewModels {
+    // Scoped to the parent fragment (ProjectListFragment, which hosts this dialog via its
+    // childFragmentManager) rather than to this dialog itself. A DialogFragment tears down its
+    // own ViewModelStore as soon as the dialog dismisses — which happens immediately on the
+    // positive button click — so a ViewModel scoped to it would have deleteProject()'s
+    // viewModelScope coroutine cancelled mid-flight before the delete finished.
+    private val projectViewModel: ProjectViewModel by viewModels(
+        ownerProducer = { requireParentFragment() }
+    ) {
         val db = AppDatabase.getInstance(requireContext())
         ProjectViewModelFactory(
             ProjectRepository(db.projectDao()),

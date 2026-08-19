@@ -10,8 +10,10 @@ import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.domain.DetectCircularProjectDependencyUseCase
 import com.example.projecttracker.domain.FindScheduleConflictsUseCase
 import com.example.projecttracker.domain.RecalculateProjectUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -41,6 +43,9 @@ class ProjectViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
+
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
 
     suspend fun getProjectById(id: Long): Project? = projectRepository.getById(id)
 
@@ -108,13 +113,18 @@ class ProjectViewModel(
 
     fun deleteProject(projectId: Long) {
         viewModelScope.launch {
-            val project = projectRepository.getById(projectId) ?: return@launch
-            // Dependency rows pointing at/from this project cascade-delete with it (FK
-            // ON DELETE CASCADE); capture former dependents first so they can be re-validated
-            // afterwards — a project that was held back by this dependency may now proceed.
-            val formerDependents = projectDependencyRepository.getDependents(projectId).map { it.projectId }
-            projectRepository.delete(project)
-            formerDependents.forEach { recalculateProjectUseCase(it) }
+            _isDeleting.value = true
+            try {
+                val project = projectRepository.getById(projectId) ?: return@launch
+                // Dependency rows pointing at/from this project cascade-delete with it (FK
+                // ON DELETE CASCADE); capture former dependents first so they can be re-validated
+                // afterwards — a project that was held back by this dependency may now proceed.
+                val formerDependents = projectDependencyRepository.getDependents(projectId).map { it.projectId }
+                projectRepository.delete(project)
+                formerDependents.forEach { recalculateProjectUseCase(it) }
+            } finally {
+                _isDeleting.value = false
+            }
         }
     }
 

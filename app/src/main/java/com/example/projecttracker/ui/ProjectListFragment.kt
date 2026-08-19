@@ -75,12 +75,23 @@ class ProjectListFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                projectViewModel.projects.collect { projects ->
-                    projectListAdapter.submitList(projects)
-                    binding.layoutEmptyState.visibility = if (projects.isEmpty()) {
-                        View.VISIBLE
-                    } else {
-                        View.GONE
+                launch {
+                    projectViewModel.projects.collect { projects ->
+                        projectListAdapter.submitList(projects)
+                        binding.layoutEmptyState.visibility = if (projects.isEmpty()) {
+                            View.VISIBLE
+                        } else {
+                            View.GONE
+                        }
+                    }
+                }
+                launch {
+                    projectViewModel.isDeleting.collect { isDeleting ->
+                        binding.layoutDeleteLoading.visibility = if (isDeleting) {
+                            View.VISIBLE
+                        } else {
+                            View.GONE
+                        }
                     }
                 }
             }
