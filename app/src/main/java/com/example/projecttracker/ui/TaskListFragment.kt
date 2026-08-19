@@ -42,6 +42,10 @@ class TaskListFragment : Fragment() {
         onEditClick = { task ->
             TaskFormDialogFragment.newInstanceForEdit(projectId, task.id)
                 .show(childFragmentManager, TaskFormDialogFragment.TAG)
+        },
+        onDeleteClick = { task ->
+            TaskDeleteConfirmDialogFragment.newInstance(projectId, task.id, task.nama)
+                .show(childFragmentManager, TaskDeleteConfirmDialogFragment.TAG)
         }
     )
 

@@ -14,7 +14,8 @@ import com.example.projecttracker.databinding.ItemTaskBinding
 import com.example.projecttracker.viewmodel.TaskListItem
 
 class TaskListAdapter(
-    private val onEditClick: (Task) -> Unit
+    private val onEditClick: (Task) -> Unit,
+    private val onDeleteClick: (Task) -> Unit
 ) : ListAdapter<TaskListItem, TaskListAdapter.TaskViewHolder>(TaskDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
@@ -27,20 +28,21 @@ class TaskListAdapter(
     }
 
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
-        holder.bind(getItem(position), onEditClick)
+        holder.bind(getItem(position), onEditClick, onDeleteClick)
     }
 
     class TaskViewHolder(
         private val binding: ItemTaskBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: TaskListItem, onEditClick: (Task) -> Unit) {
+        fun bind(item: TaskListItem, onEditClick: (Task) -> Unit, onDeleteClick: (Task) -> Unit) {
             val context = binding.root.context
 
             binding.textTaskName.text = item.task.nama
             binding.textTaskStatus.text = statusLabel(item.task.status)
             binding.textTaskBobot.text = context.getString(R.string.task_item_bobot_format, item.task.bobot)
             binding.buttonEditTask.setOnClickListener { onEditClick(item.task) }
+            binding.buttonDeleteTask.setOnClickListener { onDeleteClick(item.task) }
 
             binding.cardTask.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 marginStart = dpToPx(16) + item.level * dpToPx(24)

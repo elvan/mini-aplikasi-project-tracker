@@ -6,12 +6,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.projecttracker.data.local.AppDatabase
 import com.example.projecttracker.data.local.entity.Project
 import com.example.projecttracker.data.local.entity.Task
+import com.example.projecttracker.data.local.entity.TaskDependency
 import com.example.projecttracker.data.local.entity.TaskStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,6 +25,7 @@ class TaskDaoTest {
     private lateinit var database: AppDatabase
     private lateinit var taskDao: TaskDao
     private lateinit var projectDao: ProjectDao
+    private lateinit var taskDependencyDao: TaskDependencyDao
 
     @Before
     fun setUp() {
@@ -32,6 +35,7 @@ class TaskDaoTest {
         ).build()
         taskDao = database.taskDao()
         projectDao = database.projectDao()
+        taskDependencyDao = database.taskDependencyDao()
     }
 
     @After
@@ -93,5 +97,47 @@ class TaskDaoTest {
 
         assertEquals(2, subtasks.size)
         assertEquals(setOf("Subtask 1", "Subtask 2"), subtasks.map { it.nama }.toSet())
+    }
+
+    @Test
+    fun delete_cascadesToSubtasksTransitively() = runBlocking {
+        val projectId = insertProject()
+        val parentId = taskDao.insert(Task(nama = "Parent", projectId = projectId, bobot = 3))
+        val childId = taskDao.insert(Task(nama = "Child", projectId = projectId, bobot = 1, parentTaskId = parentId))
+        val grandchildId = taskDao.insert(Task(nama = "Grandchild", projectId = projectId, bobot = 1, parentTaskId = childId))
+
+        taskDao.delete(taskDao.getById(parentId)!!)
+
+        assertNull(taskDao.getById(parentId))
+        assertNull(taskDao.getById(childId))
+        assertNull(taskDao.getById(grandchildId))
+    }
+
+    @Test
+    fun delete_cascadesToOwnDependencies() = runBlocking {
+        val projectId = insertProject()
+        val taskId = taskDao.insert(Task(nama = "Task 1", projectId = projectId, bobot = 2))
+        val dependsOnId = taskDao.insert(Task(nama = "Task 2", projectId = projectId, bobot = 2))
+        taskDependencyDao.insert(TaskDependency(taskId = taskId, dependsOnTaskId = dependsOnId))
+
+        taskDao.delete(taskDao.getById(taskId)!!)
+
+        assertTrue(taskDependencyDao.getDependenciesOf(taskId).isEmpty())
+        assertNull(taskDao.getById(taskId))
+        assertEquals("Task 2", taskDao.getById(dependsOnId)?.nama)
+    }
+
+    @Test
+    fun delete_cascadesToDependenciesOfOtherTasks() = runBlocking {
+        val projectId = insertProject()
+        val dependentId = taskDao.insert(Task(nama = "Dependent", projectId = projectId, bobot = 2))
+        val dependencyId = taskDao.insert(Task(nama = "Dependency", projectId = projectId, bobot = 2))
+        taskDependencyDao.insert(TaskDependency(taskId = dependentId, dependsOnTaskId = dependencyId))
+
+        taskDao.delete(taskDao.getById(dependencyId)!!)
+
+        assertNull(taskDao.getById(dependencyId))
+        assertTrue(taskDependencyDao.getDependenciesOf(dependentId).isEmpty())
+        assertEquals("Dependent", taskDao.getById(dependentId)?.nama)
     }
 }

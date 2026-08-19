@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class TaskListItem(val task: Task, val level: Int)
 
@@ -103,6 +104,15 @@ class TaskViewModel(
         recalculateProject()
 
         return TaskSaveResult.Success
+    }
+
+    fun deleteTask(taskId: Long) {
+        viewModelScope.launch {
+            // Cascades to subtasks and dependency rows via ON DELETE CASCADE foreign keys.
+            val task = taskRepository.getById(taskId) ?: return@launch
+            taskRepository.delete(task)
+            recalculateProject()
+        }
     }
 
     private suspend fun recalculateProject() {
