@@ -30,10 +30,16 @@ class ProjectListFragment : Fragment() {
         ProjectViewModelFactory(ProjectRepository(projectDao))
     }
 
-    private val projectListAdapter = ProjectListAdapter { project ->
-        val args = Bundle().apply { putLong("projectId", project.id) }
-        findNavController().navigate(R.id.action_projectListFragment_to_taskListFragment, args)
-    }
+    private val projectListAdapter = ProjectListAdapter(
+        onItemClick = { project ->
+            val args = Bundle().apply { putLong("projectId", project.id) }
+            findNavController().navigate(R.id.action_projectListFragment_to_taskListFragment, args)
+        },
+        onEditClick = { project ->
+            ProjectFormDialogFragment.newInstanceForEdit(project.id)
+                .show(childFragmentManager, ProjectFormDialogFragment.TAG)
+        }
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,6 +56,11 @@ class ProjectListFragment : Fragment() {
         binding.recyclerViewProjectList.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = projectListAdapter
+        }
+
+        binding.fabAddProject.setOnClickListener {
+            ProjectFormDialogFragment.newInstanceForAdd()
+                .show(childFragmentManager, ProjectFormDialogFragment.TAG)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

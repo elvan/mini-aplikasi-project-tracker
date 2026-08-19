@@ -13,4 +13,21 @@
 
     <string name="project_list_empty_title">Belum ada project</string>
     <string name="project_list_empty_description">Tap tombol tambah untuk membuat project pertama Anda.</string>
+
+    <string name="action_add_project">Tambah project</string>
+    <string name="action_edit_project">Edit project</string>
+    <string name="action_save">Simpan</string>
+    <string name="action_cancel">Batal</string>
+
+    <string name="title_project_form_add">Tambah Project</string>
+    <string name="title_project_form_edit">Edit Project</string>
+    <string name="label_project_name">Nama Project</string>
+    <string name="label_start_date">Tanggal Mulai</string>
+    <string name="label_end_date">Tanggal Selesai</string>
+    <string name="label_project_status_readonly">Status</string>
+    <string name="label_project_progress_readonly">Progress</string>
+
+    <string name="error_project_name_required">Nama project tidak boleh kosong</string>
+    <string name="error_date_required">Tanggal wajib diisi</string>
+    <string name="error_end_date_before_start_date">Tanggal selesai tidak boleh sebelum tanggal mulai</string>
 </resources>

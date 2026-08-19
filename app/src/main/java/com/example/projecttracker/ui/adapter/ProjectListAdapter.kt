@@ -13,7 +13,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class ProjectListAdapter(
-    private val onItemClick: (Project) -> Unit
+    private val onItemClick: (Project) -> Unit,
+    private val onEditClick: (Project) -> Unit
 ) : ListAdapter<Project, ProjectListAdapter.ProjectViewHolder>(ProjectDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectViewHolder {
@@ -53,6 +54,7 @@ class ProjectListAdapter(
             )
 
             binding.root.setOnClickListener { onItemClick(project) }
+            binding.buttonEditProject.setOnClickListener { onEditClick(project) }
         }
 
         private fun formatDate(date: LocalDate): String = date.format(dateFormatter)
