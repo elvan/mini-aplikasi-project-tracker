@@ -2,11 +2,18 @@
     <string name="app_name">Project Tracker</string>
     <string name="title_project_list">Daftar Project</string>
     <string name="title_task_list">Daftar Task</string>
-    <string name="task_list_project_id_placeholder">Project ID: %1$d</string>
 
     <string name="project_status_draft">Draft</string>
     <string name="project_status_in_progress">In Progress</string>
     <string name="project_status_done">Done</string>
+
+    <string name="task_status_draft">Draft</string>
+    <string name="task_status_in_progress">In Progress</string>
+    <string name="task_status_done">Done</string>
+    <string name="task_item_bobot_format">Bobot: %1$d</string>
+
+    <string name="task_list_empty_title">Belum ada task</string>
+    <string name="task_list_empty_description">Tap tombol tambah untuk membuat task pertama pada project ini.</string>
 
     <string name="project_progress_format">%.1f%%</string>
     <string name="project_date_range_format">%1$s – %2$s</string>
