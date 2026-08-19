@@ -3,7 +3,13 @@ package com.example.projecttracker.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.projecttracker.data.local.entity.Task
+import com.example.projecttracker.data.local.entity.TaskDependency
+import com.example.projecttracker.data.local.entity.TaskStatus
+import com.example.projecttracker.data.repository.ProjectRepository
+import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
+import com.example.projecttracker.domain.ProjectRecalculator
+import com.example.projecttracker.domain.TaskDependencyValidator
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -11,8 +17,20 @@ import kotlinx.coroutines.flow.stateIn
 
 data class TaskListItem(val task: Task, val level: Int)
 
+sealed class TaskSaveError {
+    data class DependencyNotDone(val dependencyName: String) : TaskSaveError()
+    object CircularDependency : TaskSaveError()
+}
+
+sealed class TaskSaveResult {
+    object Success : TaskSaveResult()
+    data class Error(val error: TaskSaveError) : TaskSaveResult()
+}
+
 class TaskViewModel(
     private val taskRepository: TaskRepository,
+    private val taskDependencyRepository: TaskDependencyRepository,
+    private val projectRepository: ProjectRepository,
     private val projectId: Long
 ) : ViewModel() {
 
@@ -23,6 +41,79 @@ class TaskViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
+
+    suspend fun getTaskById(taskId: Long): Task? = taskRepository.getById(taskId)
+
+    suspend fun getAllTasksInProjectOnce(): List<Task> =
+        taskRepository.getTasksForProgressCalculation(projectId)
+
+    suspend fun getDependencyIdsOf(taskId: Long): Set<Long> =
+        taskDependencyRepository.getDependenciesOf(taskId).map { it.dependsOnTaskId }.toSet()
+
+    suspend fun saveTask(
+        taskId: Long?,
+        nama: String,
+        status: TaskStatus,
+        bobot: Int,
+        parentTaskId: Long?,
+        dependencyIds: Set<Long>
+    ): TaskSaveResult {
+        val allTasks = taskRepository.getTasksForProgressCalculation(projectId)
+        val tasksById = allTasks.associateBy { it.id }
+
+        if (status == TaskStatus.DONE) {
+            val blockingDependency = dependencyIds
+                .mapNotNull { tasksById[it] }
+                .firstOrNull { it.status != TaskStatus.DONE }
+            if (blockingDependency != null) {
+                return TaskSaveResult.Error(TaskSaveError.DependencyNotDone(blockingDependency.nama))
+            }
+        }
+
+        val graph = mutableMapOf<Long, List<Long>>()
+        for (task in allTasks) {
+            if (task.id == taskId) continue
+            graph[task.id] = taskDependencyRepository.getDependenciesOf(task.id).map { it.dependsOnTaskId }
+        }
+        graph[taskId ?: NEW_TASK_NODE_ID] = dependencyIds.toList()
+
+        if (TaskDependencyValidator.hasCycle(graph)) {
+            return TaskSaveResult.Error(TaskSaveError.CircularDependency)
+        }
+
+        val savedTaskId = if (taskId == null) {
+            taskRepository.insert(
+                Task(nama = nama, status = status, projectId = projectId, bobot = bobot, parentTaskId = parentTaskId)
+            )
+        } else {
+            taskRepository.update(
+                Task(id = taskId, nama = nama, status = status, projectId = projectId, bobot = bobot, parentTaskId = parentTaskId)
+            )
+            taskId
+        }
+
+        val existingDependencyIds = if (taskId != null) getDependencyIdsOf(taskId) else emptySet()
+        (dependencyIds - existingDependencyIds).forEach {
+            taskDependencyRepository.insert(TaskDependency(savedTaskId, it))
+        }
+        (existingDependencyIds - dependencyIds).forEach {
+            taskDependencyRepository.delete(TaskDependency(savedTaskId, it))
+        }
+
+        recalculateProject()
+
+        return TaskSaveResult.Success
+    }
+
+    private suspend fun recalculateProject() {
+        val project = projectRepository.getById(projectId) ?: return
+        val projectTasks = taskRepository.getTasksForProgressCalculation(projectId)
+        val progress = ProjectRecalculator.calculateProjectProgress(projectTasks)
+        val status = ProjectRecalculator.calculateProjectStatus(projectTasks)
+        if (project.completionProgress != progress || project.status != status) {
+            projectRepository.update(project.copy(completionProgress = progress, status = status))
+        }
+    }
 
     private fun flattenHierarchy(tasks: List<Task>): List<TaskListItem> {
         val childrenByParent = tasks.groupBy { it.parentTaskId }
@@ -37,5 +128,11 @@ class TaskViewModel(
 
         addChildren(null, 0)
         return result
+    }
+
+    private companion object {
+        // No real task can have this id (Room autoIncrement starts at 1); used as the new-task's
+        // graph node when checking for cycles before an insert has produced a real id.
+        const val NEW_TASK_NODE_ID = 0L
     }
 }

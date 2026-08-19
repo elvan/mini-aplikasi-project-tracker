@@ -48,6 +48,16 @@
             android:textColor="@color/status_badge_text"
             tools:text="In Progress" />
 
+        <ImageButton
+            android:id="@+id/button_edit_task"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/action_edit_task"
+            android:padding="4dp"
+            android:src="@drawable/ic_edit" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

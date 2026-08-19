@@ -11,6 +11,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.projecttracker.data.local.AppDatabase
+import com.example.projecttracker.data.repository.ProjectRepository
+import com.example.projecttracker.data.repository.TaskDependencyRepository
 import com.example.projecttracker.data.repository.TaskRepository
 import com.example.projecttracker.databinding.FragmentTaskListBinding
 import com.example.projecttracker.ui.adapter.TaskListAdapter
@@ -27,11 +29,21 @@ class TaskListFragment : Fragment() {
         get() = arguments?.getLong("projectId", -1L) ?: -1L
 
     private val taskViewModel: TaskViewModel by viewModels {
-        val taskDao = AppDatabase.getInstance(requireContext()).taskDao()
-        TaskViewModelFactory(TaskRepository(taskDao), projectId)
+        val db = AppDatabase.getInstance(requireContext())
+        TaskViewModelFactory(
+            TaskRepository(db.taskDao()),
+            TaskDependencyRepository(db.taskDependencyDao()),
+            ProjectRepository(db.projectDao()),
+            projectId
+        )
     }
 
-    private val taskListAdapter = TaskListAdapter()
+    private val taskListAdapter = TaskListAdapter(
+        onEditClick = { task ->
+            TaskFormDialogFragment.newInstanceForEdit(projectId, task.id)
+                .show(childFragmentManager, TaskFormDialogFragment.TAG)
+        }
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,6 +60,11 @@ class TaskListFragment : Fragment() {
         binding.recyclerViewTaskList.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = taskListAdapter
+        }
+
+        binding.fabAddTask.setOnClickListener {
+            TaskFormDialogFragment.newInstanceForAdd(projectId)
+                .show(childFragmentManager, TaskFormDialogFragment.TAG)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

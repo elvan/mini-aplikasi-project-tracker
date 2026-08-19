@@ -24,6 +24,8 @@
     <string name="action_add_project">Tambah project</string>
     <string name="action_edit_project">Edit project</string>
     <string name="action_delete_project">Hapus project</string>
+    <string name="action_add_task">Tambah task</string>
+    <string name="action_edit_task">Edit task</string>
     <string name="action_save">Simpan</string>
     <string name="action_cancel">Batal</string>
     <string name="action_delete">Hapus</string>
@@ -42,4 +44,19 @@
     <string name="error_project_name_required">Nama project tidak boleh kosong</string>
     <string name="error_date_required">Tanggal wajib diisi</string>
     <string name="error_end_date_before_start_date">Tanggal selesai tidak boleh sebelum tanggal mulai</string>
+
+    <string name="title_task_form_add">Tambah Task</string>
+    <string name="title_task_form_edit">Edit Task</string>
+    <string name="label_task_name">Nama Task</string>
+    <string name="label_task_status">Status</string>
+    <string name="label_task_bobot">Bobot</string>
+    <string name="label_task_parent">Parent Task (opsional)</string>
+    <string name="label_task_dependency">Dependency</string>
+    <string name="option_parent_none">Tidak ada (task utama)</string>
+    <string name="dependency_none_selected">Tidak ada dependency dipilih</string>
+
+    <string name="error_task_name_required">Nama task tidak boleh kosong</string>
+    <string name="error_task_bobot_invalid">Bobot harus bilangan bulat positif</string>
+    <string name="error_task_dependency_not_done">Task tidak bisa ditandai selesai karena dependency \"%1$s\" belum selesai</string>
+    <string name="error_task_circular_dependency">Dependency ini akan menghasilkan siklus (circular dependency) antar task</string>
 </resources>

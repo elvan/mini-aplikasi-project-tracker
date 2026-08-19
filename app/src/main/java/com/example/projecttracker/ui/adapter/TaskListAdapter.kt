@@ -8,11 +8,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.projecttracker.R
+import com.example.projecttracker.data.local.entity.Task
 import com.example.projecttracker.data.local.entity.TaskStatus
 import com.example.projecttracker.databinding.ItemTaskBinding
 import com.example.projecttracker.viewmodel.TaskListItem
 
-class TaskListAdapter : ListAdapter<TaskListItem, TaskListAdapter.TaskViewHolder>(TaskDiffCallback) {
+class TaskListAdapter(
+    private val onEditClick: (Task) -> Unit
+) : ListAdapter<TaskListItem, TaskListAdapter.TaskViewHolder>(TaskDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
         val binding = ItemTaskBinding.inflate(
@@ -24,19 +27,20 @@ class TaskListAdapter : ListAdapter<TaskListItem, TaskListAdapter.TaskViewHolder
     }
 
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), onEditClick)
     }
 
     class TaskViewHolder(
         private val binding: ItemTaskBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: TaskListItem) {
+        fun bind(item: TaskListItem, onEditClick: (Task) -> Unit) {
             val context = binding.root.context
 
             binding.textTaskName.text = item.task.nama
             binding.textTaskStatus.text = statusLabel(item.task.status)
             binding.textTaskBobot.text = context.getString(R.string.task_item_bobot_format, item.task.bobot)
+            binding.buttonEditTask.setOnClickListener { onEditClick(item.task) }
 
             binding.cardTask.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 marginStart = dpToPx(16) + item.level * dpToPx(24)
