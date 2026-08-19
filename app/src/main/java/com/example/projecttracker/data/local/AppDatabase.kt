@@ -6,16 +6,20 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.projecttracker.data.local.converter.Converters
+import com.example.projecttracker.data.local.dao.TaskDependencyDao
 import com.example.projecttracker.data.local.entity.Project
 import com.example.projecttracker.data.local.entity.Task
+import com.example.projecttracker.data.local.entity.TaskDependency
 
 @Database(
-    entities = [Project::class, Task::class],
-    version = 2,
+    entities = [Project::class, Task::class, TaskDependency::class],
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
+
+    abstract fun taskDependencyDao(): TaskDependencyDao
 
     companion object {
         private const val DATABASE_NAME = "project_tracker.db"
